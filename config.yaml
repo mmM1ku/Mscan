@@ -1,0 +1,11 @@
+email:
+  address: # smtp server address(ip or host)
+  port: 25
+  username: # email username
+  password: # email password
+  sendto: # send to email address
+dingtalk:
+  token:
+    - # dingtalk bot token
+  key: # key 默认为空
+  secret: # dingtalk bot secret
