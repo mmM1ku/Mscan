@@ -25,7 +25,7 @@ mscan --help
 -o 输出方式,目前支持csv,邮件,钉钉bot.邮件和钉钉需在config.yaml文件内配置信息
 ```
 
-##参考链接
+## 参考链接
 
 [fscan](https://github.com/shadow1ng/fscan)
 
