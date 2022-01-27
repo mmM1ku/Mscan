@@ -24,6 +24,8 @@ mscan --help
 -w 密码字典路径,不指定默认内部top100
 -o 输出方式,目前支持csv,邮件,钉钉bot.邮件和钉钉需在config.yaml文件内配置信息
 ```
+## 运行截图
+![运行截图](https://github.com/mmM1ku/Mscan/blob/main/imgs/E3D2A0DF-9441-4099-9442-03374D62639E.png?raw=true "运行截图")
 
 ## 参考链接
 
