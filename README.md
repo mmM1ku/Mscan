@@ -7,11 +7,21 @@
 
 端口扫描
 ```shell
-mscan -i 127.0.0.1 -p 22
+mscan -i 192.168.0.1/24,10.0.0.1-64 -p 22,80,8000-8010
+mscan -i 127.0.0.1 -p 22 -t 100
 ```
 弱口令爆破
 ```shell
-mscan -i 127.0.0.1 -p 22 -m ssh
+mscan -i 127.0.0.1 -p 22 -m ssh -b 50
+```
+结果输出
+```shell
+#本地生成result.csv
+mscan -i 127.0.0.1 -p 22 -m ssh -o csv
+#发送结果到邮箱
+mscan -i 127.0.0.1 -p 22 -m ssh -o email
+#发送结果到钉钉群机器人
+mscan -i 127.0.0.1 -p 22 -m ssh -o dingding
 ```
 参数说明
 ```shell
@@ -24,6 +34,15 @@ mscan --help
 -w 密码字典路径,不指定默认内部top100
 -o 输出方式,目前支持csv,邮件,钉钉bot.邮件和钉钉需在config.yaml文件内配置信息
 ```
+## TodoList
+
+- [ ] 添加mssql,mongo,porgres,telnet等协议支持
+- [ ] 支持服务默认端口爆破方式
+- [ ] 支持全部服务爆破方式
+- [ ] 支持飞书群机器人
+- [ ] 优化windows端日志显示
+- [ ] 支持半开端口扫描
+
 ## 运行截图
 ![运行截图](https://github.com/mmM1ku/Mscan/blob/main/imgs/E3D2A0DF-9441-4099-9442-03374D62639E.png?raw=true "运行截图")
 
