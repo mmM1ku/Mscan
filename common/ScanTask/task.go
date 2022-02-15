@@ -32,7 +32,6 @@ type Task struct {
 	lock            *sync.Mutex
 	BruteResult     []util.Result
 	bruteFinishChan chan int64
-	bruteTotal      int64
 	outputMode      string
 }
 
@@ -133,40 +132,40 @@ func (t *Task) Run() {
 	}
 	//导出结果
 	if t.outputMode != "" {
-		glg.Logf("[+]开始导出结果...")
+		glg.Log("[+]开始导出结果...")
 		util.Output(t.outputMode, t.BruteResult)
-		glg.Successf("[+]结果已生成")
+		glg.Success("[+]结果已生成")
 	}
 }
 
 func (t *Task) Scan() {
-	glg.Infof("[+]开始端口扫描...")
+	glg.Info("[+]开始端口扫描")
 	s := portscan.NewScan(t.ScanTaskMap, t.Thread, t.scantotal, t.Wg, t.lock)
 	t.ScanResult = s.ScanPool()
-	glg.Successf("[+]端口扫描已完成")
+	glg.Success("[+]端口扫描已完成")
 }
 
 func (t *Task) Brute() {
-	glg.Infof("[+]开始弱口令扫描...")
+	glg.Info("[+]开始弱口令扫描...")
 	t.bruteFinishChan = make(chan int64, t.bruteThread)
 	t.dicChan = make(chan string, t.bruteThread)
-	t.UserDicList, t.PassDicList, t.bruteTotal = brute.GetDic(t.userpath, t.passpath, t.Module, t.ScanResult)
+	t.UserDicList, t.PassDicList = brute.GetDic(t.userpath, t.passpath)
 	switch t.Module {
 	case "ssh":
-		s := brute.NewSSH(t.ScanResult, t.bruteThread, t.Wg, t.lock, t.bruteTotal, &t.UserDicList, &t.PassDicList, &t.dicChan)
+		s := brute.NewSSH(t.ScanResult, t.bruteThread, t.Wg, t.lock, &t.UserDicList, &t.PassDicList, &t.dicChan)
 		t.BruteResult = s.BruteSSHPool()
 	case "redis":
-		r := brute.NewRedis(t.ScanResult, t.bruteThread, t.Wg, t.lock, t.bruteTotal)
+		r := brute.NewRedis(t.ScanResult, t.bruteThread, t.Wg, t.lock)
 		t.BruteResult = r.BruteRedisPool()
 	case "mysql":
-		m := brute.NewMysql(t.ScanResult, t.bruteThread, t.Wg, t.lock, t.bruteTotal, &t.UserDicList, &t.PassDicList, &t.dicChan)
+		m := brute.NewMysql(t.ScanResult, t.bruteThread, t.Wg, t.lock, &t.UserDicList, &t.PassDicList, &t.dicChan)
 		t.BruteResult = m.BruteMysqlPool()
 	case "smb":
-		s := brute.NewSMB(t.ScanResult, t.bruteThread, t.Wg, t.lock, t.bruteTotal, &t.UserDicList, &t.PassDicList, &t.dicChan)
+		s := brute.NewSMB(t.ScanResult, t.bruteThread, t.Wg, t.lock, &t.UserDicList, &t.PassDicList, &t.dicChan)
 		t.BruteResult = s.BruteSMBPool()
 	case "ftp":
-		f := brute.NewFTP(t.ScanResult, t.bruteThread, t.Wg, t.lock, t.bruteTotal, &t.UserDicList, &t.PassDicList, &t.dicChan)
+		f := brute.NewFTP(t.ScanResult, t.bruteThread, t.Wg, t.lock, &t.UserDicList, &t.PassDicList, &t.dicChan)
 		t.BruteResult = f.BruteFtpPool()
 	}
-	glg.Successf("[+]弱口令扫描已完成")
+	glg.Success("[+]弱口令扫描已完成")
 }

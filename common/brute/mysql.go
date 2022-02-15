@@ -45,14 +45,14 @@ func mysqlCon(addr, user, pass string) error {
 	return nil
 }
 
-func NewMysql(addr []string, thread int, group *sync.WaitGroup, mutex *sync.Mutex, total int64, userdic, passdic *[]string, dicchan *chan string) *Mysql {
+func NewMysql(addr []string, thread int, group *sync.WaitGroup, mutex *sync.Mutex, userdic, passdic *[]string, dicchan *chan string) *Mysql {
 	return &Mysql{
 		addr:    addr,
 		thread:  thread,
 		wg:      group,
 		lock:    mutex,
 		Finish:  0,
-		total:   total,
+		total:   int64(len(addr) * len(*userdic) * len(*passdic)),
 		userdic: userdic,
 		passdic: passdic,
 		dicchan: dicchan,

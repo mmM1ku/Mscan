@@ -2,45 +2,24 @@ package brute
 
 import "Mscan/common/util"
 
-func GetDic(userpath, passpath, module string, scanresult []string) ([]string, []string, int64) {
+func GetDic(userpath, passpath string) ([]string, []string) {
 	var userDicList, passDicList []string
-	var bruteTotal int64
 	if userpath == "" && passpath == "" {
 		userDicList = util.UserList
 		passDicList = util.PassList
-		if module == "redis" {
-			bruteTotal = int64(len(scanresult))
-		} else {
-			bruteTotal = int64(len(scanresult)) * int64(len(userDicList)) * int64(len(passDicList))
-		}
-		return userDicList, passDicList, bruteTotal
+		return userDicList, passDicList
 	} else if userpath == "" {
 		userDicList = util.UserList
 		passDicList = util.ReadDicFile(passpath)
-		if module == "redis" {
-			bruteTotal = int64(len(scanresult))
-		} else {
-			bruteTotal = int64(len(scanresult)) * int64(len(userDicList)) * int64(len(passDicList))
-		}
-		return userDicList, passDicList, bruteTotal
+		return userDicList, passDicList
 	} else if passpath == "" {
 		userDicList = util.ReadDicFile(userpath)
 		passDicList = util.PassList
-		if module == "redis" {
-			bruteTotal = int64(len(scanresult))
-		} else {
-			bruteTotal = int64(len(scanresult)) * int64(len(userDicList)) * int64(len(passDicList))
-		}
-		return userDicList, passDicList, bruteTotal
+		return userDicList, passDicList
 	}
 	userDicList = util.ReadDicFile(userpath)
 	passDicList = util.ReadDicFile(passpath)
-	if module == "redis" {
-		bruteTotal = int64(len(scanresult))
-	} else {
-		bruteTotal = int64(len(scanresult)) * int64(len(userDicList)) * int64(len(passDicList))
-	}
-	return userDicList, passDicList, bruteTotal
+	return userDicList, passDicList
 }
 
 func MakeDic(userdic *[]string, passdic *[]string, dicchan *chan string) {

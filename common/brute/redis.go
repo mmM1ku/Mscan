@@ -21,14 +21,14 @@ type Redis struct {
 	total       int64
 }
 
-func NewRedis(addr []string, thread int, group *sync.WaitGroup, mutex *sync.Mutex, total int64) *Redis {
+func NewRedis(addr []string, thread int, group *sync.WaitGroup, mutex *sync.Mutex) *Redis {
 	return &Redis{
 		addr:   addr,
 		thread: thread,
 		wg:     group,
 		lock:   mutex,
 		Finish: 0,
-		total:  total,
+		total:  int64(len(addr)),
 	}
 }
 

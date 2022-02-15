@@ -25,14 +25,14 @@ type FTP struct {
 	passdic     *[]string
 }
 
-func NewFTP(addr []string, thread int, group *sync.WaitGroup, mutex *sync.Mutex, total int64, userdic, passdic *[]string, dicchan *chan string) *FTP {
+func NewFTP(addr []string, thread int, group *sync.WaitGroup, mutex *sync.Mutex, userdic, passdic *[]string, dicchan *chan string) *FTP {
 	return &FTP{
 		addr:    addr,
 		thread:  thread,
 		wg:      group,
 		lock:    mutex,
 		Finish:  0,
-		total:   total,
+		total:   int64(len(addr) * len(*userdic) * len(*passdic)),
 		userdic: userdic,
 		passdic: passdic,
 		dicchan: dicchan,

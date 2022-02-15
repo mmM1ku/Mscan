@@ -26,13 +26,13 @@ type SSH struct {
 	passdic     *[]string
 }
 
-func NewSSH(addr []string, thread int, group *sync.WaitGroup, mutex *sync.Mutex, total int64, userdic, passdic *[]string, dicchan *chan string) *SSH {
+func NewSSH(addr []string, thread int, group *sync.WaitGroup, mutex *sync.Mutex, userdic, passdic *[]string, dicchan *chan string) *SSH {
 	return &SSH{
 		addr:    addr,
 		thread:  thread,
 		wg:      group,
 		lock:    mutex,
-		total:   total,
+		total:   int64(len(addr) * len(*userdic) * len(*passdic)),
 		Finish:  0,
 		userdic: userdic,
 		passdic: passdic,

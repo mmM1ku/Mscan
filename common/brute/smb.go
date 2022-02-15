@@ -26,14 +26,14 @@ type SMB struct {
 	passdic     *[]string
 }
 
-func NewSMB(addr []string, thread int, group *sync.WaitGroup, mutex *sync.Mutex, total int64, userdic, passdic *[]string, dicchan *chan string) *SMB {
+func NewSMB(addr []string, thread int, group *sync.WaitGroup, mutex *sync.Mutex, userdic, passdic *[]string, dicchan *chan string) *SMB {
 	return &SMB{
 		addr:    addr,
 		thread:  thread,
 		wg:      group,
 		lock:    mutex,
 		Finish:  0,
-		total:   total,
+		total:   int64(len(addr) * len(*userdic) * len(*passdic)),
 		userdic: userdic,
 		passdic: passdic,
 		dicchan: dicchan,
