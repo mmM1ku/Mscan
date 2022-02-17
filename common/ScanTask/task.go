@@ -166,6 +166,17 @@ func (t *Task) Brute() {
 	case "ftp":
 		f := brute.NewFTP(t.ScanResult, t.bruteThread, t.Wg, t.lock, &t.UserDicList, &t.PassDicList, &t.dicChan)
 		t.BruteResult = f.BruteFtpPool()
+	case "postgres":
+		p := brute.NewPostgres(t.ScanResult, t.bruteThread, t.Wg, t.lock, &t.UserDicList, &t.PassDicList, &t.dicChan)
+		t.BruteResult = p.BrutePostgresPool()
+	case "mongo":
+		m := brute.NewMongo(t.ScanResult, t.bruteThread, t.Wg, t.lock, &t.UserDicList, &t.PassDicList, &t.dicChan)
+		t.BruteResult = m.BruteMongoPool()
+	case "mssql":
+		m := brute.NewMssql(t.ScanResult, t.bruteThread, t.Wg, t.lock, &t.UserDicList, &t.PassDicList, &t.dicChan)
+		t.BruteResult = m.BruteMssqlPool()
+
 	}
+
 	glg.Success("[+]弱口令扫描已完成")
 }

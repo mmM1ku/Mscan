@@ -36,11 +36,12 @@ mscan --help
 ```
 ## TodoList
 
-- [ ] 添加mssql,mongo,porgres,telnet等协议支持
+- [x] 20220215: 优化爆破队列的计数方式
+- [x] 20220217: 添加mssql,mongo,porgres等协议支持
 - [ ] 支持服务默认端口爆破方式
 - [ ] 支持全部服务爆破方式
 - [ ] 支持飞书群机器人
-- [ ] 优化windows平台日志显示方式
+- [x] ~~优化windows平台日志显示方式~~
 - [ ] 支持半开端口扫描
 
 ## 运行截图
