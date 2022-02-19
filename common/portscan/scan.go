@@ -6,13 +6,14 @@ import (
 	"github.com/kpango/glg"
 	"net"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 )
 
 type Scan struct {
-	taskMap    map[string]int
+	taskList   []string
 	thread     int
 	wg         *sync.WaitGroup
 	lock       *sync.Mutex
@@ -22,23 +23,24 @@ type Scan struct {
 	total      int64
 }
 
-func NewScan(taskMap map[string]int, threat int, total int64, group *sync.WaitGroup, mutex *sync.Mutex) *Scan {
+func NewScan(taskList []string, threat int, total int64, group *sync.WaitGroup, mutex *sync.Mutex) *Scan {
 	return &Scan{
-		taskMap: taskMap,
-		thread:  threat,
-		wg:      group,
-		lock:    mutex,
-		Finish:  0,
-		total:   total,
+		taskList: taskList,
+		thread:   threat,
+		wg:       group,
+		lock:     mutex,
+		Finish:   0,
+		total:    total,
 	}
 }
 
 func (s *Scan) scanWorker() {
-	for ip, port := range s.taskMap {
+	for _, tasks := range s.taskList {
+		task := strings.Split(tasks, ":")
+		ip := task[0]
+		port, _ := strconv.Atoi(task[1])
 		s.wg.Add(1)
 		s.workerChan <- struct{}{}
-		ip := ip
-		port := port
 		go func() {
 			result, err := TcpScan(ip, port)
 			if err != nil {

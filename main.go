@@ -8,7 +8,7 @@ import (
 
 var (
 	ips         = kingpin.Flag("ip", "IP Range").Required().Short('i').String()
-	ports       = kingpin.Flag("port", "Port Range").Required().Short('p').String()
+	ports       = kingpin.Flag("port", "Port Range").Default("1-65535").Short('p').String()
 	thread      = kingpin.Flag("thread", "Scan Threads").Default("50").Short('t').Int()
 	module      = kingpin.Flag("module", "Brute Module").Short('m').String()
 	brutethread = kingpin.Flag("brute", "Brute Threads").Default("10").Short('b').Int()

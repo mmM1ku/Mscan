@@ -20,6 +20,7 @@ type Task struct {
 	ScanIpList      []string
 	ScanPortList    []int
 	ScanTaskMap     map[string]int
+	ScanTaskList    []string
 	ScanResult      []string
 	scantotal       int64
 	Wg              *sync.WaitGroup
@@ -65,9 +66,9 @@ func (t *Task) getIpList() error {
 
 func (t *Task) getPortList() error {
 	//处理端口为空的情况，为空默认扫全端口
-	if t.PortList == "" {
+	/*if t.PortList == "" {
 		t.ScanPortList = util.MakeRangeSlice(1, 65535)
-	}
+	}*/
 	commaSplit := strings.Split(t.PortList, ",")
 	for _, str := range commaSplit {
 		str = strings.TrimSpace(str)
@@ -102,7 +103,6 @@ func (t *Task) getPortList() error {
 }
 
 func (t *Task) getScanTaskList() error {
-	t.ScanTaskMap = make(map[string]int)
 	if err := t.getIpList(); err != nil {
 		return err
 	}
@@ -111,10 +111,10 @@ func (t *Task) getScanTaskList() error {
 	}
 	for _, ip := range t.ScanIpList {
 		for _, port := range t.ScanPortList {
-			t.ScanTaskMap[ip] = port
+			t.ScanTaskList = append(t.ScanTaskList, ip+":"+strconv.Itoa(port))
 		}
 	}
-	t.scantotal = int64(len(t.ScanTaskMap))
+	t.scantotal = int64(len(t.ScanTaskList))
 	return nil
 }
 
@@ -140,7 +140,7 @@ func (t *Task) Run() {
 
 func (t *Task) Scan() {
 	glg.Info("[+]开始端口扫描")
-	s := portscan.NewScan(t.ScanTaskMap, t.Thread, t.scantotal, t.Wg, t.lock)
+	s := portscan.NewScan(t.ScanTaskList, t.Thread, t.scantotal, t.Wg, t.lock)
 	t.ScanResult = s.ScanPool()
 	glg.Success("[+]端口扫描已完成")
 }
