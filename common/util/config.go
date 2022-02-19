@@ -9,9 +9,13 @@ type Result struct {
 	Pass string
 }
 
-/*var PostService = map[string]string{
-	"22":   "ssh",
-	"3306": "mysql",
-	"445":  "smb",
-	"21":   "ftp",
-}*/
+var PostService = map[string]string{
+	"ssh":      "22",
+	"redis":    "6379",
+	"mysql":    "3306",
+	"smb":      "445",
+	"ftp":      "21",
+	"postgres": "5432",
+	"mongo":    "27017",
+	"mssql":    "1433",
+}

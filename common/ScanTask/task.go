@@ -66,9 +66,10 @@ func (t *Task) getIpList() error {
 
 func (t *Task) getPortList() error {
 	//处理端口为空的情况，为空默认扫全端口
-	/*if t.PortList == "" {
+	if t.PortList == "" {
 		t.ScanPortList = util.MakeRangeSlice(1, 65535)
-	}*/
+		return nil
+	}
 	commaSplit := strings.Split(t.PortList, ",")
 	for _, str := range commaSplit {
 		str = strings.TrimSpace(str)
@@ -114,21 +115,47 @@ func (t *Task) getScanTaskList() error {
 			t.ScanTaskList = append(t.ScanTaskList, ip+":"+strconv.Itoa(port))
 		}
 	}
+	fmt.Println(t.ScanTaskList)
 	t.scantotal = int64(len(t.ScanTaskList))
 	return nil
 }
 
 func (t *Task) Run() {
-	//初始化，解析参数
-	if err := t.getScanTaskList(); err != nil {
-		glg.Error(err)
-		return
-	}
-	//端口扫描
-	t.Scan()
-	//弱口令爆破
-	if t.Module != "" {
-		t.Brute()
+	if t.Module == "" {
+		//初始化，解析参数
+		if err := t.getScanTaskList(); err != nil {
+			glg.Error(err)
+			return
+		}
+		//端口扫描
+		t.Scan()
+	} else {
+		if t.PortList == "" {
+			t.PortList = util.PostService[t.Module]
+			//初始化，解析参数
+			if err := t.getScanTaskList(); err != nil {
+				glg.Error(err)
+				return
+			}
+			//端口扫描
+			t.Scan()
+			//弱口令爆破
+			if t.Module != "" {
+				t.Brute()
+			}
+		} else {
+			//初始化，解析参数
+			if err := t.getScanTaskList(); err != nil {
+				glg.Error(err)
+				return
+			}
+			//端口扫描
+			t.Scan()
+			//弱口令爆破
+			if t.Module != "" {
+				t.Brute()
+			}
+		}
 	}
 	//导出结果
 	if t.outputMode != "" {
