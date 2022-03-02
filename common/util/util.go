@@ -7,6 +7,8 @@ import (
 	"github.com/kpango/glg"
 	mail "github.com/xhit/go-simple-mail/v2"
 	"io/ioutil"
+	"log"
+	"net/http"
 	"os"
 	"time"
 )
@@ -105,5 +107,26 @@ func Email(addr, user, pass, to string, port int, result []Result) {
 		glg.Error(err)
 	} else {
 		glg.Success("Email sent successfully")
+	}
+}
+
+func Client() *http.Client {
+	log.SetOutput(ioutil.Discard)
+	return &http.Client{
+		Timeout: 30 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+			/*DialContext: (&net.Dialer{
+				Timeout: 10 * time.Second,
+			}).DialContext,*/
+			MaxResponseHeaderBytes: 5 * 1024,
+			MaxIdleConns:           100,
+			//TLSHandshakeTimeout:    5 * time.Second,
+		},
+		/*CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},*/
 	}
 }

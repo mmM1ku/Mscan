@@ -4,6 +4,7 @@ import (
 	"Mscan/common/brute"
 	"Mscan/common/portscan"
 	"Mscan/common/util"
+	"Mscan/common/webscan"
 	"fmt"
 	"github.com/kpango/glg"
 	"github.com/malfunkt/iprange"
@@ -33,11 +34,13 @@ type Task struct {
 	lock            *sync.Mutex
 	BruteResult     []util.Result
 	bruteFinishChan chan int64
+	WebReuslt       []map[string]interface{}
 	outputMode      string
+	webscan         bool
 }
 
 // NewTask 创建新扫描结构体对象，初始化
-func NewTask(addr, port string, thread int, module string, bruteThread int, userpath string, passpath string, output string) *Task {
+func NewTask(addr, port string, thread int, module string, bruteThread int, userpath string, passpath string, output string, webscan bool) *Task {
 	return &Task{
 		AddrList:    addr,
 		PortList:    port,
@@ -49,7 +52,9 @@ func NewTask(addr, port string, thread int, module string, bruteThread int, user
 		userpath:    userpath,
 		passpath:    passpath,
 		outputMode:  output,
+		webscan:     webscan,
 	}
+
 }
 
 func (t *Task) getIpList() error {
@@ -115,47 +120,24 @@ func (t *Task) getScanTaskList() error {
 			t.ScanTaskList = append(t.ScanTaskList, ip+":"+strconv.Itoa(port))
 		}
 	}
-	fmt.Println(t.ScanTaskList)
+	//fmt.Println(t.ScanTaskList)
 	t.scantotal = int64(len(t.ScanTaskList))
 	return nil
 }
 
 func (t *Task) Run() {
-	if t.Module == "" {
-		//初始化，解析参数
-		if err := t.getScanTaskList(); err != nil {
-			glg.Error(err)
-			return
-		}
-		//端口扫描
-		t.Scan()
-	} else {
-		if t.PortList == "" {
-			t.PortList = util.PostService[t.Module]
-			//初始化，解析参数
-			if err := t.getScanTaskList(); err != nil {
-				glg.Error(err)
-				return
-			}
-			//端口扫描
-			t.Scan()
-			//弱口令爆破
-			if t.Module != "" {
-				t.Brute()
-			}
-		} else {
-			//初始化，解析参数
-			if err := t.getScanTaskList(); err != nil {
-				glg.Error(err)
-				return
-			}
-			//端口扫描
-			t.Scan()
-			//弱口令爆破
-			if t.Module != "" {
-				t.Brute()
-			}
-		}
+	//初始化，解析参数
+	if err := t.getScanTaskList(); err != nil {
+		glg.Error(err)
+		return
+	}
+	//端口扫描
+	t.Scan()
+	if t.webscan {
+		t.Webscan()
+	}
+	if t.Module != "" {
+		t.Brute()
 	}
 	//导出结果
 	if t.outputMode != "" {
@@ -204,6 +186,12 @@ func (t *Task) Brute() {
 		t.BruteResult = m.BruteMssqlPool()
 
 	}
-
 	glg.Success("[+]弱口令扫描已完成")
+}
+
+func (t *Task) Webscan() {
+	glg.Info("[+]开始web服务扫描")
+	w := webscan.NewWebScan(t.ScanResult, t.Wg, t.lock)
+	t.WebReuslt = w.WebScanPool()
+	glg.Success("[+]web服务扫描已完成")
 }

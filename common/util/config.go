@@ -9,6 +9,25 @@ type Result struct {
 	Pass string
 }
 
+type WebResult struct {
+	Url        string
+	StatusCode int
+	Title      string
+	Finger     []string
+}
+
+type Finger struct {
+	Path        string
+	Method      string
+	ReqHeaders  map[string]string
+	ReqData     string
+	StatusCode  int
+	RespHeaders map[string]string
+	Keyword     []string
+	FaviconHash []string
+	Name        string
+}
+
 var PostService = map[string]string{
 	"ssh":      "22",
 	"redis":    "6379",
