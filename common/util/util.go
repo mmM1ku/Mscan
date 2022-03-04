@@ -7,7 +7,6 @@ import (
 	"github.com/kpango/glg"
 	mail "github.com/xhit/go-simple-mail/v2"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -111,7 +110,7 @@ func Email(addr, user, pass, to string, port int, result []Result) {
 }
 
 func Client() *http.Client {
-	log.SetOutput(ioutil.Discard)
+	//log.SetOutput(ioutil.Discard)
 	return &http.Client{
 		Timeout: 30 * time.Second,
 		Transport: &http.Transport{

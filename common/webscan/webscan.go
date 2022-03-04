@@ -75,7 +75,7 @@ func (w *Web) WebScanPool() []map[string]interface{} {
 	//初始化协程控制channel
 	w.fingerResult = make(map[string]map[string]int)
 	w.result = make(map[string]map[string]interface{})
-	w.workerChan = make(chan struct{}, 20)
+	w.workerChan = make(chan struct{}, 10)
 	//获取指纹切片，写入相应slice
 	w.getFinger()
 	//开始工作
@@ -168,7 +168,7 @@ func (w *Web) getFinger() {
 
 //defaultClient
 func (w *Web) defaultClient(protocol, addr string) error {
-	var result util.WebResult
+	//var result util.WebResult
 	fingerMap := make(map[string]int)
 	infoMap := make(map[string]interface{})
 	client := util.Client()
@@ -195,9 +195,9 @@ func (w *Web) defaultClient(protocol, addr string) error {
 	}
 	bodystr := string(body)
 	title := doc.Find("title").Text()
-	result.Url = url
+	/*result.Url = url
 	result.StatusCode = resp.StatusCode
-	result.Title = title
+	result.Title = title*/
 	for _, finger := range w.fingerDefaultSlice {
 		//w.wg.Add(1)
 		finger := finger
@@ -292,7 +292,7 @@ func (w *Web) defaultClient(protocol, addr string) error {
 
 //customClient
 func (w *Web) customClient(protocol, addr string, finger util.Finger) error {
-	var result util.WebResult
+	//var result util.WebResult
 	fingerMap := make(map[string]int)
 	infoMap := make(map[string]interface{})
 	//自定义路径
@@ -324,9 +324,9 @@ func (w *Web) customClient(protocol, addr string, finger util.Finger) error {
 	}
 	bodystr := string(body)
 	title := doc.Find("title").Text()
-	result.Url = url
+	/*result.Url = url
 	result.StatusCode = resp.StatusCode
-	result.Title = title
+	result.Title = title*/
 	//开始指纹匹配
 	statusFlag := false
 	var htmlFlag bool
