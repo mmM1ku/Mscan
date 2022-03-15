@@ -4,12 +4,7 @@ import (
 	"Mscan/common/brute"
 	"Mscan/common/portscan"
 	"Mscan/common/util"
-	"Mscan/common/webscan"
-	"fmt"
 	"github.com/kpango/glg"
-	"github.com/malfunkt/iprange"
-	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -18,12 +13,7 @@ type Task struct {
 	PortList        string
 	Thread          int
 	Module          string
-	ScanIpList      []string
-	ScanPortList    []int
-	ScanTaskMap     map[string]int
-	ScanTaskList    []string
 	ScanResult      []string
-	scantotal       int64
 	Wg              *sync.WaitGroup
 	UserDicList     []string
 	PassDicList     []string
@@ -34,13 +24,12 @@ type Task struct {
 	lock            *sync.Mutex
 	BruteResult     []util.Result
 	bruteFinishChan chan int64
-	WebReuslt       []map[string]interface{}
+	Reuslt          map[string]*util.DetailResult
 	outputMode      string
-	webscan         bool
 }
 
 // NewTask 创建新扫描结构体对象，初始化
-func NewTask(addr, port string, thread int, module string, bruteThread int, userpath string, passpath string, output string, webscan bool) *Task {
+func NewTask(addr, port string, thread int, module string, bruteThread int, userpath string, passpath string, output string) *Task {
 	return &Task{
 		AddrList:    addr,
 		PortList:    port,
@@ -52,106 +41,29 @@ func NewTask(addr, port string, thread int, module string, bruteThread int, user
 		userpath:    userpath,
 		passpath:    passpath,
 		outputMode:  output,
-		webscan:     webscan,
 	}
 
-}
-
-func (t *Task) getIpList() error {
-	list, err := iprange.ParseList(t.AddrList)
-	if err != nil {
-		return err
-	}
-	rangeList := list.Expand()
-	for _, ip := range rangeList {
-		t.ScanIpList = append(t.ScanIpList, ip.String())
-	}
-	return nil
-}
-
-func (t *Task) getPortList() error {
-	//处理端口为空的情况，为空默认扫全端口
-	if t.PortList == "" {
-		t.ScanPortList = util.MakeRangeSlice(1, 65535)
-		return nil
-	}
-	commaSplit := strings.Split(t.PortList, ",")
-	for _, str := range commaSplit {
-		str = strings.TrimSpace(str)
-		if strings.Contains(str, "-") {
-			parts := strings.Split(str, "-")
-			if len(parts) != 2 {
-				return fmt.Errorf("格式错误: %s", str)
-			}
-			port1, err := strconv.Atoi(parts[0])
-			if err != nil {
-				return fmt.Errorf("端口号错误: %s", parts[0])
-			}
-			port2, err := strconv.Atoi(parts[1])
-			if err != nil {
-				return fmt.Errorf("端口号错误: %s", parts[1])
-			}
-			if port1 > port2 {
-				return fmt.Errorf("端口范围错误: %d-%d", port1, port2)
-			}
-			for i := port1; i <= port2; i++ {
-				t.ScanPortList = append(t.ScanPortList, i)
-			}
-		} else {
-			if port, err := strconv.Atoi(str); err != nil {
-				return fmt.Errorf("端口号错误: %s", str)
-			} else {
-				t.ScanPortList = append(t.ScanPortList, port)
-			}
-		}
-	}
-	return nil
-}
-
-func (t *Task) getScanTaskList() error {
-	if err := t.getIpList(); err != nil {
-		return err
-	}
-	if err := t.getPortList(); err != nil {
-		return err
-	}
-	for _, ip := range t.ScanIpList {
-		for _, port := range t.ScanPortList {
-			t.ScanTaskList = append(t.ScanTaskList, ip+":"+strconv.Itoa(port))
-		}
-	}
-	//fmt.Println(t.ScanTaskList)
-	t.scantotal = int64(len(t.ScanTaskList))
-	return nil
 }
 
 func (t *Task) Run() {
-	//初始化，解析参数
-	if err := t.getScanTaskList(); err != nil {
-		glg.Error(err)
-		return
-	}
 	//端口扫描
 	t.Scan()
-	if t.webscan {
-		t.Webscan()
-	}
 	if t.Module != "" {
 		t.Brute()
 	}
 	//导出结果
 	if t.outputMode != "" {
 		glg.Log("[+]开始导出结果...")
-		util.Output(t.outputMode, t.BruteResult)
+		util.Output(t.outputMode, t.Reuslt)
 		glg.Success("[+]结果已生成")
 	}
 }
 
 func (t *Task) Scan() {
-	glg.Info("[+]开始端口扫描")
-	s := portscan.NewScan(t.ScanTaskList, t.Thread, t.scantotal, t.Wg, t.lock)
-	t.ScanResult = s.ScanPool()
-	glg.Success("[+]端口扫描已完成")
+	glg.Info("[+]开始扫描")
+	s := portscan.NewScan(t.AddrList, t.PortList, t.Thread, t.Wg, t.lock)
+	t.Reuslt = s.ScanPool()
+	glg.Success("[+]扫描已完成")
 }
 
 func (t *Task) Brute() {
@@ -187,11 +99,4 @@ func (t *Task) Brute() {
 
 	}
 	glg.Success("[+]弱口令扫描已完成")
-}
-
-func (t *Task) Webscan() {
-	glg.Info("[+]开始web服务扫描")
-	w := webscan.NewWebScan(t.ScanResult, t.Wg, t.lock)
-	t.WebReuslt = w.WebScanPool()
-	glg.Success("[+]web服务扫描已完成")
 }

@@ -4,6 +4,7 @@ import (
 	"Mscan/common/ScanTask"
 	"Mscan/common/util"
 	"gopkg.in/alecthomas/kingpin.v2"
+	_ "net/http/pprof"
 )
 
 var (
@@ -15,14 +16,16 @@ var (
 	userpath    = kingpin.Flag("upath", "User Dic Path").Short('u').String()
 	passpath    = kingpin.Flag("ppath", "Pass Dic Path").Short('w').String()
 	output      = kingpin.Flag("output", "Output Result").Short('o').String()
-	webscan     = kingpin.Flag("webscan", "Webscan").Default("false").Bool()
 )
 
 func main() {
 	defer util.TimeCost()()
+	/*go func() {
+		_ = http.ListenAndServe("0.0.0.0:8081", nil)
+	}()*/
 	util.InitLogo()
 	kingpin.Parse()
-	task := ScanTask.NewTask(*ips, *ports, *thread, *module, *brutethread, *userpath, *passpath, *output, *webscan)
+	task := ScanTask.NewTask(*ips, *ports, *thread, *module, *brutethread, *userpath, *passpath, *output)
 	task.Run()
 	task.Wg.Wait()
 }

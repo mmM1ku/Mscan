@@ -1,12 +1,9 @@
 package util
 
 import (
-	"encoding/csv"
-	"github.com/blinkbean/dingtalk"
+	"encoding/json"
 	"github.com/kpango/glg"
-	"gopkg.in/yaml.v2"
 	"os"
-	"strconv"
 )
 
 type yamlStruct struct {
@@ -25,67 +22,25 @@ type yamlStruct struct {
 }
 
 // Output 输出选项
-func Output(outputmod string, result []Result) {
+func Output(outputmod string, result map[string]*DetailResult) {
 	switch outputmod {
-	case "csv":
-		outputCsv(result)
-	case "dingding":
-		dingTalk(result)
-	case "email":
-		sendmail(result)
+	case "json":
+		outputJson(result)
 	}
 }
 
-func outputCsv(result []Result) {
-	csvFile, err := os.Create("result.csv")
+func outputJson(result map[string]*DetailResult) {
+	data, err := json.MarshalIndent(result, "", "    ")
 	if err != nil {
 		glg.Error(err)
 	}
-	defer csvFile.Close()
-
-	csvFile.WriteString("\xEF\xBB\xBF")
-	writer := csv.NewWriter(csvFile)
-	writer.Write([]string{"序号", "IP:Port", "用户名", "密码"})
-	for n, res := range result {
-		writer.Write([]string{strconv.Itoa(n + 1), *res.Addr, res.User, res.Pass})
-		n++
-	}
-	writer.Flush()
-}
-
-// 钉钉机器人消息
-func dingTalk(result []Result) {
-	var t yamlStruct
-	content, err := readConfig()
+	file, err := os.OpenFile("result.json", os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		glg.Error(err)
 	}
-	err = yaml.Unmarshal(content, &t)
+	defer file.Close()
+	_, err = file.Write(data)
 	if err != nil {
 		glg.Error(err)
 	}
-	msg := []string{"### 弱口令结果"}
-	for _, res := range result {
-		msg = append(msg, "- 地址:"+*res.Addr+",用户名:"+res.User+",密码:"+res.Pass)
-	}
-	if t.DingTalk.Secret == "" {
-		cli := dingtalk.InitDingTalk(t.DingTalk.Token, t.DingTalk.Key)
-		cli.SendMarkDownMessageBySlice("Result", msg)
-	} else {
-		cli := dingtalk.InitDingTalkWithSecret(t.DingTalk.Token[0], t.DingTalk.Secret)
-		cli.SendMarkDownMessageBySlice("Result", msg)
-	}
-}
-
-func sendmail(result []Result) {
-	var t yamlStruct
-	content, err := readConfig()
-	if err != nil {
-		glg.Error(err)
-	}
-	err = yaml.Unmarshal(content, &t)
-	if err != nil {
-		glg.Error(err)
-	}
-	Email(t.Email.Address, t.Email.Username, t.Email.Password, t.Email.Sendto, t.Email.Port, result)
 }

@@ -4,11 +4,15 @@ import (
 	"bufio"
 	"crypto/tls"
 	"fmt"
+	"github.com/google/gopacket/pcap"
 	"github.com/kpango/glg"
 	mail "github.com/xhit/go-simple-mail/v2"
 	"io/ioutil"
+	"math/rand"
+	"net"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -61,7 +65,7 @@ func TimeCost() func() {
 
 // InitLogo 初始化logo
 func InitLogo() {
-	var str = "███╗   ███╗███████╗ ██████╗ █████╗ ███╗   ██╗\n████╗ ████║██╔════╝██╔════╝██╔══██╗████╗  ██║\n██╔████╔██║███████╗██║     ███████║██╔██╗ ██║\n██║╚██╔╝██║╚════██║██║     ██╔══██║██║╚██╗██║\n██║ ╚═╝ ██║███████║╚██████╗██║  ██║██║ ╚████║\n╚═╝     ╚═╝╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝\n\nauthor: M1ku    Version:0.1\n"
+	var str = "███╗   ███╗███████╗ ██████╗ █████╗ ███╗   ██╗\n████╗ ████║██╔════╝██╔════╝██╔══██╗████╗  ██║\n██╔████╔██║███████╗██║     ███████║██╔██╗ ██║\n██║╚██╔╝██║╚════██║██║     ██╔══██║██║╚██╗██║\n██║ ╚═╝ ██║███████║╚██████╗██║  ██║██║ ╚████║\n╚═╝     ╚═╝╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝\n\nauthor: M1ku    Version:0.2\n"
 	fmt.Println(str)
 }
 
@@ -110,22 +114,79 @@ func Email(addr, user, pass, to string, port int, result []Result) {
 }
 
 func Client() *http.Client {
-	//log.SetOutput(ioutil.Discard)
 	return &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: 3 * time.Second,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
-			/*DialContext: (&net.Dialer{
-				Timeout: 10 * time.Second,
-			}).DialContext,*/
-			MaxResponseHeaderBytes: 5 * 1024,
-			MaxIdleConns:           100,
-			//TLSHandshakeTimeout:    5 * time.Second,
+			DisableKeepAlives: true,
 		},
 		/*CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},*/
 	}
+}
+
+// RemoveRepByLoop 字符串切片去重
+func RemoveRepByLoop(slc []string) []string {
+	result := []string{} // 存放结果
+	for i := range slc {
+		flag := true
+		for j := range result {
+			if slc[i] == result[j] {
+				flag = false // 存在重复元素，标识为false
+				break
+			}
+		}
+		if flag { // 标识为false，不添加进结果
+			result = append(result, slc[i])
+		}
+	}
+	return result
+}
+
+// GetSrcPort 创建随机源端口，范围（10000-60000）
+func GetSrcPort() int {
+	rand.Seed(time.Now().UnixNano())
+	port := rand.Intn(50000) + 10000
+	return port
+}
+
+//获取内网ip
+func getLocalIP(dstip net.IP) (net.IP, error) {
+	addr, err := net.ResolveUDPAddr("udp", dstip.String()+":23333")
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	if conn, err := net.DialUDP("udp", nil, addr); err == nil {
+		if localaddr, ok := conn.LocalAddr().(*net.UDPAddr); ok {
+			return localaddr.IP, nil
+		}
+	}
+	return nil, err
+}
+
+// GetLocalDevice 获取本地网卡信息
+func GetLocalDevice() (string, string, error) {
+	var deviceName, deviceAddr string
+	var dstIp = net.ParseIP("10.10.10.10")
+	localIp, err := getLocalIP(dstIp)
+	if err != nil {
+		fmt.Println(err)
+	}
+	devices, err := pcap.FindAllDevs()
+	if err != nil {
+		return "", "", err
+	}
+	for _, device := range devices {
+		for _, srcIp := range device.Addresses {
+			if strings.Contains(srcIp.IP.String(), localIp.String()) {
+				deviceName = device.Name
+				deviceAddr = srcIp.IP.String()
+			}
+		}
+	}
+	return deviceName, deviceAddr, nil
 }
