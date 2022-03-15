@@ -4,15 +4,12 @@ import (
 	"bufio"
 	"crypto/tls"
 	"fmt"
-	"github.com/google/gopacket/pcap"
 	"github.com/kpango/glg"
 	mail "github.com/xhit/go-simple-mail/v2"
 	"io/ioutil"
 	"math/rand"
-	"net"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -151,42 +148,4 @@ func GetSrcPort() int {
 	rand.Seed(time.Now().UnixNano())
 	port := rand.Intn(50000) + 10000
 	return port
-}
-
-//获取内网ip
-func getLocalIP(dstip net.IP) (net.IP, error) {
-	addr, err := net.ResolveUDPAddr("udp", dstip.String()+":23333")
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	if conn, err := net.DialUDP("udp", nil, addr); err == nil {
-		if localaddr, ok := conn.LocalAddr().(*net.UDPAddr); ok {
-			return localaddr.IP, nil
-		}
-	}
-	return nil, err
-}
-
-// GetLocalDevice 获取本地网卡信息
-func GetLocalDevice() (string, string, error) {
-	var deviceName, deviceAddr string
-	var dstIp = net.ParseIP("10.10.10.10")
-	localIp, err := getLocalIP(dstIp)
-	if err != nil {
-		fmt.Println(err)
-	}
-	devices, err := pcap.FindAllDevs()
-	if err != nil {
-		return "", "", err
-	}
-	for _, device := range devices {
-		for _, srcIp := range device.Addresses {
-			if strings.Contains(srcIp.IP.String(), localIp.String()) {
-				deviceName = device.Name
-				deviceAddr = srcIp.IP.String()
-			}
-		}
-	}
-	return deviceName, deviceAddr, nil
 }

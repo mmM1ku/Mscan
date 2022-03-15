@@ -34,28 +34,27 @@ func (s *Scan) identifyFinger() {
 				if err == nil {
 					s.lock.Lock()
 					s.Result[ip].WebInfo[url] = &util.WebResult{}
-					//s.Result[ip].WebInfo.Url = url
 					s.Result[ip].WebInfo[url].Title = title
 					s.Result[ip].WebInfo[url].StatusCode = status
 					s.lock.Unlock()
 				}
 			} else {
 				url1 := "http://" + target
-				title, status, err := s.defaultClient(ip, url1)
+				title1, status1, err := s.defaultClient(ip, url1)
 				if err == nil {
 					s.lock.Lock()
 					s.Result[ip].WebInfo[url1] = &util.WebResult{}
-					s.Result[ip].WebInfo[url1].Title = title
-					s.Result[ip].WebInfo[url1].StatusCode = status
+					s.Result[ip].WebInfo[url1].Title = title1
+					s.Result[ip].WebInfo[url1].StatusCode = status1
 					s.lock.Unlock()
 				}
 				url2 := "https://" + target
-				title, status, err = s.defaultClient(ip, url2)
+				title2, status2, err := s.defaultClient(ip, url2)
 				if err == nil {
 					s.lock.Lock()
 					s.Result[ip].WebInfo[url2] = &util.WebResult{}
-					s.Result[ip].WebInfo[url2].Title = title
-					s.Result[ip].WebInfo[url2].StatusCode = status
+					s.Result[ip].WebInfo[url2].Title = title2
+					s.Result[ip].WebInfo[url2].StatusCode = status2
 					s.lock.Unlock()
 				}
 			}
