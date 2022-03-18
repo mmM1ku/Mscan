@@ -5,11 +5,10 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/kpango/glg"
-	mail "github.com/xhit/go-simple-mail/v2"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -66,50 +65,6 @@ func InitLogo() {
 	fmt.Println(str)
 }
 
-// 读取config配置文件
-func readConfig() ([]byte, error) {
-	content, err := ioutil.ReadFile("./config.yaml")
-	if err != nil {
-		return nil, err
-	}
-	return content, nil
-}
-
-// Email 发送email功能
-func Email(addr, user, pass, to string, port int, result []Result) {
-	server := mail.NewSMTPClient()
-	server.Host = addr
-	server.Port = port
-	server.Username = user
-	server.Password = pass
-
-	var htmlBody = "<table border=\"1\"><tr><td>地址</td><td>用户名</td><td>密码</td></tr>"
-	for _, res := range result {
-		htmlBody = htmlBody + "<tr><td>" + *res.Addr + "</td><td>" + res.User + "</td><td>" + res.Pass + "</td></tr>"
-	}
-	htmlBody = htmlBody + "</table>"
-
-	server.ConnectTimeout = 6 * time.Second
-	server.SendTimeout = 6 * time.Second
-	server.TLSConfig = &tls.Config{InsecureSkipVerify: true}
-
-	client, err := server.Connect()
-	if err != nil {
-		glg.Error(err)
-	}
-
-	email := mail.NewMSG()
-	email.SetFrom(user).AddTo(to).SetSubject("WeakPass")
-	email.SetBody(mail.TextHTML, htmlBody)
-
-	err = email.Send(client)
-	if err != nil {
-		glg.Error(err)
-	} else {
-		glg.Success("Email sent successfully")
-	}
-}
-
 func Client() *http.Client {
 	return &http.Client{
 		Timeout: 3 * time.Second,
@@ -148,4 +103,12 @@ func GetSrcPort() int {
 	rand.Seed(time.Now().UnixNano())
 	port := rand.Intn(50000) + 10000
 	return port
+}
+
+func toStringSlice(a []int) []string {
+	var s []string
+	for _, v := range a {
+		s = append(s, strconv.Itoa(v))
+	}
+	return s
 }

@@ -5,8 +5,8 @@ go 1.17
 require (
 	github.com/denisenkom/go-mssqldb v0.12.0
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/gocarina/gocsv v0.0.0-20220310154401-d4df709ca055
 	github.com/gomodule/redigo v1.8.8
-	github.com/google/gopacket v1.1.19
 	github.com/hirochachacha/go-smb2 v1.0.10
 	github.com/jlaffaye/ftp v0.0.0-20211117213618-11820403398b
 	github.com/kpango/glg v1.6.10

@@ -30,6 +30,7 @@ type DetailResult struct {
 	Ports   []int
 	Service []string
 	WebInfo map[string]*WebResult
+	//WebInfo map[string]map[string]interface{}
 }
 
 var PostService = map[string]string{

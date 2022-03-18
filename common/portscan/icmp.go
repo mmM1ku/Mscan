@@ -1,6 +1,7 @@
 package portscan
 
 import (
+	"github.com/kpango/glg"
 	"os/exec"
 	"runtime"
 	"sync"
@@ -29,12 +30,13 @@ func ping(addr string) bool {
 
 func (s *Scan) hostScan() {
 	var wg = &sync.WaitGroup{}
-	workChan := make(chan struct{}, 10)
+	workChan := make(chan struct{}, 20)
 	for _, ip := range s.ipList {
 		ip := ip
 		wg.Add(1)
 		workChan <- struct{}{}
 		go func() {
+			glg.Logf("[+]对主机%s进行存活探测", ip)
 			if ping(ip) {
 				s.hostChan <- ip
 			}

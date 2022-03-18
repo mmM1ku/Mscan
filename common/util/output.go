@@ -6,19 +6,11 @@ import (
 	"os"
 )
 
-type yamlStruct struct {
-	Email struct {
-		Address  string `yaml:"address"`
-		Port     int    `yaml:"port"`
-		Username string `yaml:"username"`
-		Password string `yaml:"password"`
-		Sendto   string `yaml:"sendto"`
-	}
-	DingTalk struct {
-		Token  []string `yaml:"token"`
-		Key    string   `yaml:"key"`
-		Secret string   `yaml:"secret"`
-	}
+type Csv struct {
+	Ip       string `csv:"ip"`
+	Ports    string `csv:"ports"`
+	WebTitle string `csv:"web_title"`
+	Finger   string `csv:"finger"`
 }
 
 // Output 输出选项
@@ -27,6 +19,7 @@ func Output(outputmod string, result map[string]*DetailResult) {
 	case "json":
 		outputJson(result)
 	}
+
 }
 
 func outputJson(result map[string]*DetailResult) {
@@ -34,7 +27,7 @@ func outputJson(result map[string]*DetailResult) {
 	if err != nil {
 		glg.Error(err)
 	}
-	file, err := os.OpenFile("result.json", os.O_RDWR|os.O_CREATE, 0755)
+	file, err := os.OpenFile("./result.json", os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		glg.Error(err)
 	}

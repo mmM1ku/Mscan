@@ -64,16 +64,14 @@ func (s *Scan) scanWorker() {
 				} else if rep != nil {
 					s.lock.Lock()
 					glg.Infof("[+]发现端口：%s/open", target)
-					s.scanResult = append(s.scanResult, target)
 					s.Result[ip].Ports = append(s.Result[ip].Ports, port)
-					s.lock.Unlock()
 					//判断是否http
 					if identifyHttp(rep) {
-						s.lock.Lock()
+						glg.Infof("[+]发现web服务：%s:%v", ip, port)
 						s.Result[ip].Service = append(s.Result[ip].Service, strconv.Itoa(port)+":web")
-						s.lock.Unlock()
 						s.targetChan <- target
 					}
+					s.lock.Unlock()
 				} else {
 					<-s.workerChan
 					wg.Done()
@@ -118,9 +116,8 @@ func (s *Scan) ScanPool() map[string]*util.DetailResult {
 	s.wg.Wait()
 	for k, v := range s.Result {
 		glg.Infof("[+]ip: %s, ports: %v, service: %v, ", k, &v.Ports, &v.Service)
-		for key, value := range v.WebInfo {
-			value.Finger = util.RemoveRepByLoop(value.Finger)
-			glg.Infof("[+]url: %v, webTitle: %v, webStatus: %v, webFinger: %v", key, value.Title, value.StatusCode, value.Finger)
+		for url, value := range v.WebInfo {
+			glg.Infof("[+]url: %v, webTitle: %v, webStatus: %v, webFinger: %v", url, value.Title, value.StatusCode, util.RemoveRepByLoop(value.Finger))
 		}
 	}
 	return s.Result
