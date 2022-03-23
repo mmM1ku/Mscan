@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	"unicode/utf8"
 )
 
 // MakeRangeSlice 生成连续切片，给全端口号使用
@@ -111,4 +112,18 @@ func toStringSlice(a []int) []string {
 		s = append(s, strconv.Itoa(v))
 	}
 	return s
+}
+
+func Convert(src string) string {
+	var dst string = ""
+	for i, r := range src {
+		var v string = ""
+		if r == utf8.RuneError {
+			v = string(src[i])
+		} else {
+			v = string(r)
+		}
+		dst += string(v)
+	}
+	return dst
 }

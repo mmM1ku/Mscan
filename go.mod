@@ -12,7 +12,6 @@ require (
 	github.com/kpango/glg v1.6.10
 	github.com/lib/pq v1.10.4
 	github.com/malfunkt/iprange v0.9.0
-	github.com/xhit/go-simple-mail/v2 v2.10.0
 	go.mongodb.org/mongo-driver v1.8.3
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
