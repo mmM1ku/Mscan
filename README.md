@@ -16,12 +16,8 @@ mscan -i 127.0.0.1 -p 22 -m ssh -b 50
 ```
 结果输出
 ```shell
-#本地生成result.csv
-mscan -i 127.0.0.1 -p 22 -m ssh -o csv
-#发送结果到邮箱
-mscan -i 127.0.0.1 -p 22 -m ssh -o email
-#发送结果到钉钉群机器人
-mscan -i 127.0.0.1 -p 22 -m ssh -o dingding
+#本地生成result.json
+mscan -i 127.0.0.1 -p 22 -m ssh -o json
 ```
 参数说明
 ```shell
