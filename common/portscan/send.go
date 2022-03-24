@@ -176,13 +176,16 @@ func rdpSend(target string) ([]byte, error) {
 
 func (s *Scan) checkWorker() {
 	var wg = &sync.WaitGroup{}
+	workChan := make(chan struct{}, s.thread/4)
 	for service := range s.sendChan {
 		service := service
 		wg.Add(1)
+		workChan <- struct{}{}
 		go func() {
 			rep, err := defaultSend(service.Target)
 			if err != nil {
 				wg.Done()
+				<-workChan
 				return
 			}
 			if rep != nil {
@@ -197,22 +200,22 @@ func (s *Scan) checkWorker() {
 				s.openChan <- service
 			}
 			wg.Done()
+			<-workChan
 		}()
-
 	}
 	wg.Wait()
 	glg.Success("[+]端口扫描已完成！")
 	close(s.openChan)
+	close(workChan)
 }
 
 func (s *Scan) sendWorker() {
 	var wg = &sync.WaitGroup{}
-	//var cache []byte
+	workChan := make(chan struct{}, s.thread/6)
 	for openTarget := range s.openChan {
 		openTarget := openTarget
-		//s.repChan <- openTarget
-		//cache = openTarget.Rep
 		wg.Add(6)
+		workChan <- struct{}{}
 		go func() {
 			rep, err := commonSend(openTarget.Target)
 			if err != nil {
@@ -225,24 +228,13 @@ func (s *Scan) sendWorker() {
 				newTarget.Port = openTarget.Port
 				newTarget.Target = openTarget.Target
 				newTarget.Tag = "common"
-				//openTarget.Rep = append(openTarget.Rep, []byte(util.Convert(string(rep))))
-				/*s.lock.Lock()
-				if bytes.Equal(cache[:], []byte(util.Convert(string(rep)))[:]) {
-					s.lock.Unlock()
-					wg.Done()
-					return
-				} else {
-					s.lock.Lock()
-					cache = []byte(util.Convert(string(rep)))
-					s.lock.Unlock()
-				}*/
 				newTarget.Rep = []byte(util.Convert(string(rep)))
 				s.repChan <- openTarget
-				//s.repChan <- newTarget
-				//s.lock.Unlock()
 			}
 			wg.Done()
+			<-workChan
 		}()
+		workChan <- struct{}{}
 		go func() {
 			rep, err := redisSend(openTarget.Target)
 			if err != nil {
@@ -255,24 +247,13 @@ func (s *Scan) sendWorker() {
 				newTarget.Port = openTarget.Port
 				newTarget.Target = openTarget.Target
 				newTarget.Tag = "redis"
-				//openTarget.Rep = append(openTarget.Rep, []byte(util.Convert(string(rep))))
-				//s.lock.Lock()
-				/*s.lock.Lock()
-				if bytes.Equal(cache[:], []byte(util.Convert(string(rep)))[:]) {
-					s.lock.Unlock()
-					wg.Done()
-					return
-				} else {
-					s.lock.Lock()
-					cache = []byte(util.Convert(string(rep)))
-					s.lock.Unlock()
-				}*/
 				newTarget.Rep = []byte(util.Convert(string(rep)))
 				s.repChan <- newTarget
-				//s.lock.Unlock()
 			}
 			wg.Done()
+			<-workChan
 		}()
+		workChan <- struct{}{}
 		go func() {
 			rep, err := mssqlSend(openTarget.Target)
 			if err != nil {
@@ -285,24 +266,13 @@ func (s *Scan) sendWorker() {
 				newTarget.Port = openTarget.Port
 				newTarget.Target = openTarget.Target
 				newTarget.Tag = "mssql"
-				/*s.lock.Lock()
-				if bytes.Equal(cache[:], []byte(util.Convert(string(rep)))[:]) {
-					s.lock.Unlock()
-					wg.Done()
-					return
-				} else {
-					s.lock.Lock()
-					cache = []byte(util.Convert(string(rep)))
-					s.lock.Unlock()
-				}*/
-				//openTarget.Rep = append(openTarget.Rep, []byte(util.Convert(string(rep))))
-				//s.lock.Lock()
 				newTarget.Rep = []byte(util.Convert(string(rep)))
 				s.repChan <- newTarget
-				//s.lock.Unlock()
 			}
 			wg.Done()
+			<-workChan
 		}()
+		workChan <- struct{}{}
 		go func() {
 			rep, err := smbProgNegSend(openTarget.Target)
 			if err != nil {
@@ -315,24 +285,13 @@ func (s *Scan) sendWorker() {
 				newTarget.Port = openTarget.Port
 				newTarget.Target = openTarget.Target
 				newTarget.Tag = "smb"
-				/*s.lock.Lock()
-				if bytes.Equal(cache[:], []byte(util.Convert(string(rep)))[:]) {
-					s.lock.Unlock()
-					wg.Done()
-					return
-				} else {
-					s.lock.Lock()
-					cache = []byte(util.Convert(string(rep)))
-					s.lock.Unlock()
-				}*/
-				//openTarget.Rep = append(openTarget.Rep, []byte(util.Convert(string(rep))))
-				//s.lock.Lock()
 				newTarget.Rep = []byte(util.Convert(string(rep)))
 				s.repChan <- newTarget
-				//s.lock.Unlock()
 			}
 			wg.Done()
+			<-workChan
 		}()
+		workChan <- struct{}{}
 		go func() {
 			rep, err := mongoSend(openTarget.Target)
 			if err != nil {
@@ -345,24 +304,13 @@ func (s *Scan) sendWorker() {
 				newTarget.Port = openTarget.Port
 				newTarget.Target = openTarget.Target
 				newTarget.Tag = "mongo"
-				/*s.lock.Lock()
-				if bytes.Equal(cache[:], []byte(util.Convert(string(rep)))[:]) {
-					s.lock.Unlock()
-					wg.Done()
-					return
-				} else {
-					s.lock.Lock()
-					cache = []byte(util.Convert(string(rep)))
-					s.lock.Unlock()
-				}*/
-				//openTarget.Rep = append(openTarget.Rep, []byte(util.Convert(string(rep))))
-				//s.lock.Lock()
 				newTarget.Rep = []byte(util.Convert(string(rep)))
 				s.repChan <- newTarget
-				//s.lock.Unlock()
 			}
 			wg.Done()
+			<-workChan
 		}()
+		workChan <- struct{}{}
 		go func() {
 			rep, err := rdpSend(openTarget.Target)
 			if err != nil {
@@ -375,26 +323,14 @@ func (s *Scan) sendWorker() {
 				newTarget.Port = openTarget.Port
 				newTarget.Target = openTarget.Target
 				newTarget.Tag = "rdp"
-				/*s.lock.Lock()
-				if bytes.Equal(cache[:], []byte(util.Convert(string(rep)))[:]) {
-					s.lock.Unlock()
-					wg.Done()
-					return
-				} else {
-					s.lock.Lock()
-					cache = []byte(util.Convert(string(rep)))
-					s.lock.Unlock()
-				}*/
-
-				//openTarget.Rep = append(openTarget.Rep, []byte(util.Convert(string(rep))))
-				//s.lock.Lock()
 				newTarget.Rep = []byte(util.Convert(string(rep)))
 				s.repChan <- newTarget
-				//s.lock.Unlock()
 			}
 			wg.Done()
+			<-workChan
 		}()
 	}
 	wg.Wait()
 	close(s.repChan)
+	close(workChan)
 }
