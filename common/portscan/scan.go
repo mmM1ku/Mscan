@@ -28,9 +28,9 @@ type Scan struct {
 	customFinger  []util.WebFinger
 	WebResult     util.WebResult
 	Result        map[string]*util.DetailResult
-	//serviceRep    map[string][][]byte
-	sendChan chan *ServiceRep
-	repChan  chan *ServiceRep
+	sendChan      chan *ServiceRep
+	openChan      chan *ServiceRep
+	repChan       chan *ServiceRep
 }
 
 func NewScan(add, port string, threat int, group *sync.WaitGroup, mutex *sync.Mutex) *Scan {
@@ -76,21 +76,26 @@ func (s *Scan) scanWorker() {
 func (s *Scan) ScanPool() map[string]*util.DetailResult {
 	//init
 	s.Result = make(map[string]*util.DetailResult)
-	s.hostChan = make(chan string, s.thread)
+	s.hostChan = make(chan string, 10)
 	s.repChan = make(chan *ServiceRep, s.thread)
-	s.sendChan = make(chan *ServiceRep, s.thread/4)
+	s.sendChan = make(chan *ServiceRep, s.thread)
+	s.openChan = make(chan *ServiceRep, s.thread)
 	s.targetChan = make(chan string, s.thread)
 	s.respData = make(chan *util.HttpRes, s.thread)
 	s.workerChan = make(chan struct{}, s.thread)
 	s.genScanTarget()
 	s.getFinger()
-	s.wg.Add(6)
+	s.wg.Add(7)
 	go func() {
 		s.hostScan()
 		s.wg.Done()
 	}()
 	go func() {
 		s.scanWorker()
+		s.wg.Done()
+	}()
+	go func() {
+		s.checkWorker()
 		s.wg.Done()
 	}()
 	go func() {
@@ -120,11 +125,11 @@ func (s *Scan) ScanPool() map[string]*util.DetailResult {
 }
 
 func tcpConn(target string) (net.Conn, error) {
-	conn, err := net.DialTimeout("tcp", target, time.Duration(1)*time.Second)
+	conn, err := net.DialTimeout("tcp", target, time.Duration(2)*time.Second)
 	if err != nil {
 		return nil, err
 	}
-	err = conn.SetDeadline(time.Now().Add(time.Duration(1) * time.Second))
+	err = conn.SetDeadline(time.Now().Add(time.Duration(2) * time.Second))
 	if err != nil {
 		if conn != nil {
 			_ = conn.Close()

@@ -5,13 +5,13 @@ import (
 	"strings"
 )
 
-func identifyHttp(reply [][]byte) bool {
-	for _, rep := range reply {
-		check, _ := regexp.Match("^HTTP/\\d.\\d \\d*", rep)
-		if check {
-			return true
-		}
+func identifyHttp(reply []byte) bool {
+	//for _, rep := range reply {
+	check, _ := regexp.Match("^HTTP/\\d.\\d \\d*", reply)
+	if check {
+		return true
 	}
+	//}
 	return false
 }
 
@@ -63,12 +63,12 @@ func checkBody(respBody, bodyFinger string) bool {
 	return result
 }
 
-func identifyService(pattern string, reply [][]byte) bool {
-	for _, rep := range reply {
-		check, _ := regexp.Match(pattern, rep)
-		if check {
-			return true
-		}
+func identifyService(pattern string, reply []byte) bool {
+	//for _, rep := range reply {
+	check, _ := regexp.Match(pattern, reply)
+	if check {
+		return true
 	}
+	//}
 	return false
 }

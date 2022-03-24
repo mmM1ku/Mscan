@@ -3,6 +3,7 @@ package portscan
 import (
 	"Mscan/common/util"
 	"bytes"
+	"github.com/kpango/glg"
 	"sync"
 	"time"
 )
@@ -51,7 +52,7 @@ func commonSend(target string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	_ = conn.SetDeadline(time.Now().Add(time.Duration(2) * time.Second))
+	_ = conn.SetDeadline(time.Now().Add(time.Duration(3) * time.Second))
 	rep := make([]byte, 256)
 	_, _ = conn.Read(rep)
 	if conn != nil {
@@ -73,7 +74,7 @@ func redisSend(target string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	_ = conn.SetDeadline(time.Now().Add(time.Duration(2) * time.Second))
+	_ = conn.SetDeadline(time.Now().Add(time.Duration(3) * time.Second))
 	rep := make([]byte, 256)
 	_, _ = conn.Read(rep)
 	if conn != nil {
@@ -95,7 +96,7 @@ func mssqlSend(target string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	_ = conn.SetDeadline(time.Now().Add(time.Duration(2) * time.Second))
+	_ = conn.SetDeadline(time.Now().Add(time.Duration(3) * time.Second))
 	rep := make([]byte, 256)
 	_, _ = conn.Read(rep)
 	if conn != nil {
@@ -117,7 +118,7 @@ func smbProgNegSend(target string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	_ = conn.SetDeadline(time.Now().Add(time.Duration(2) * time.Second))
+	_ = conn.SetDeadline(time.Now().Add(time.Duration(3) * time.Second))
 	rep := make([]byte, 256)
 	_, _ = conn.Read(rep)
 	if conn != nil {
@@ -139,7 +140,7 @@ func mongoSend(target string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	_ = conn.SetDeadline(time.Now().Add(time.Duration(2) * time.Second))
+	_ = conn.SetDeadline(time.Now().Add(time.Duration(3) * time.Second))
 	rep := make([]byte, 256)
 	_, _ = conn.Read(rep)
 	if conn != nil {
@@ -161,7 +162,7 @@ func rdpSend(target string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	_ = conn.SetDeadline(time.Now().Add(time.Duration(2) * time.Second))
+	_ = conn.SetDeadline(time.Now().Add(time.Duration(3) * time.Second))
 	rep := make([]byte, 256)
 	_, _ = conn.Read(rep)
 	if conn != nil {
@@ -173,110 +174,227 @@ func rdpSend(target string) ([]byte, error) {
 	return nil, nil
 }
 
-func (s *Scan) sendWorker() {
-	var wgs = &sync.WaitGroup{}
+func (s *Scan) checkWorker() {
+	var wg = &sync.WaitGroup{}
 	for service := range s.sendChan {
 		service := service
-		wgs.Add(1)
+		wg.Add(1)
 		go func() {
 			rep, err := defaultSend(service.Target)
 			if err != nil {
-				wgs.Done()
+				wg.Done()
 				return
 			}
 			if rep != nil {
 				s.lock.Lock()
-				service.Rep = append(service.Rep, rep)
+				glg.Infof("[+]发现端口：%s/open", service.Target)
+				s.Result[service.Ip].Ports = append(s.Result[service.Ip].Ports, service.Port)
+				//service.Rep = append(service.Rep, rep)
+				service.Tag = "default"
+				service.Rep = []byte(util.Convert(string(rep)))
 				s.lock.Unlock()
-			} else {
-				wgs.Done()
+				//s.repChan <- service
+				s.openChan <- service
+			}
+			wg.Done()
+		}()
+
+	}
+	wg.Wait()
+	glg.Success("[+]端口扫描已完成！")
+	close(s.openChan)
+}
+
+func (s *Scan) sendWorker() {
+	var wg = &sync.WaitGroup{}
+	//var cache []byte
+	for openTarget := range s.openChan {
+		openTarget := openTarget
+		//s.repChan <- openTarget
+		//cache = openTarget.Rep
+		wg.Add(6)
+		go func() {
+			rep, err := commonSend(openTarget.Target)
+			if err != nil {
+				wg.Done()
 				return
 			}
-			var wg = &sync.WaitGroup{}
-			wg.Add(6)
-			go func() {
-				rep, err := commonSend(service.Target)
-				if err != nil {
+			if rep != nil {
+				var newTarget = &ServiceRep{}
+				newTarget.Ip = openTarget.Ip
+				newTarget.Port = openTarget.Port
+				newTarget.Target = openTarget.Target
+				newTarget.Tag = "common"
+				//openTarget.Rep = append(openTarget.Rep, []byte(util.Convert(string(rep))))
+				/*s.lock.Lock()
+				if bytes.Equal(cache[:], []byte(util.Convert(string(rep)))[:]) {
+					s.lock.Unlock()
 					wg.Done()
 					return
-				}
-				if rep != nil {
+				} else {
 					s.lock.Lock()
-					service.Rep = append(service.Rep, []byte(util.Convert(string(rep))))
+					cache = []byte(util.Convert(string(rep)))
 					s.lock.Unlock()
-				}
+				}*/
+				newTarget.Rep = []byte(util.Convert(string(rep)))
+				s.repChan <- openTarget
+				//s.repChan <- newTarget
+				//s.lock.Unlock()
+			}
+			wg.Done()
+		}()
+		go func() {
+			rep, err := redisSend(openTarget.Target)
+			if err != nil {
 				wg.Done()
-			}()
-			go func() {
-				rep, err := redisSend(service.Target)
-				if err != nil {
+				return
+			}
+			if rep != nil {
+				var newTarget = &ServiceRep{}
+				newTarget.Ip = openTarget.Ip
+				newTarget.Port = openTarget.Port
+				newTarget.Target = openTarget.Target
+				newTarget.Tag = "redis"
+				//openTarget.Rep = append(openTarget.Rep, []byte(util.Convert(string(rep))))
+				//s.lock.Lock()
+				/*s.lock.Lock()
+				if bytes.Equal(cache[:], []byte(util.Convert(string(rep)))[:]) {
+					s.lock.Unlock()
 					wg.Done()
 					return
-				}
-				if rep != nil {
+				} else {
 					s.lock.Lock()
-					service.Rep = append(service.Rep, []byte(util.Convert(string(rep))))
+					cache = []byte(util.Convert(string(rep)))
 					s.lock.Unlock()
-				}
+				}*/
+				newTarget.Rep = []byte(util.Convert(string(rep)))
+				s.repChan <- newTarget
+				//s.lock.Unlock()
+			}
+			wg.Done()
+		}()
+		go func() {
+			rep, err := mssqlSend(openTarget.Target)
+			if err != nil {
 				wg.Done()
-			}()
-			go func() {
-				rep, err := mssqlSend(service.Target)
-				if err != nil {
+				return
+			}
+			if rep != nil {
+				var newTarget = &ServiceRep{}
+				newTarget.Ip = openTarget.Ip
+				newTarget.Port = openTarget.Port
+				newTarget.Target = openTarget.Target
+				newTarget.Tag = "mssql"
+				/*s.lock.Lock()
+				if bytes.Equal(cache[:], []byte(util.Convert(string(rep)))[:]) {
+					s.lock.Unlock()
 					wg.Done()
 					return
-				}
-				if rep != nil {
+				} else {
 					s.lock.Lock()
-					service.Rep = append(service.Rep, []byte(util.Convert(string(rep))))
+					cache = []byte(util.Convert(string(rep)))
 					s.lock.Unlock()
-				}
+				}*/
+				//openTarget.Rep = append(openTarget.Rep, []byte(util.Convert(string(rep))))
+				//s.lock.Lock()
+				newTarget.Rep = []byte(util.Convert(string(rep)))
+				s.repChan <- newTarget
+				//s.lock.Unlock()
+			}
+			wg.Done()
+		}()
+		go func() {
+			rep, err := smbProgNegSend(openTarget.Target)
+			if err != nil {
 				wg.Done()
-			}()
-			go func() {
-				rep, err := smbProgNegSend(service.Target)
-				if err != nil {
+				return
+			}
+			if rep != nil {
+				var newTarget = &ServiceRep{}
+				newTarget.Ip = openTarget.Ip
+				newTarget.Port = openTarget.Port
+				newTarget.Target = openTarget.Target
+				newTarget.Tag = "smb"
+				/*s.lock.Lock()
+				if bytes.Equal(cache[:], []byte(util.Convert(string(rep)))[:]) {
+					s.lock.Unlock()
 					wg.Done()
 					return
-				}
-				if rep != nil {
+				} else {
 					s.lock.Lock()
-					service.Rep = append(service.Rep, []byte(util.Convert(string(rep))))
+					cache = []byte(util.Convert(string(rep)))
 					s.lock.Unlock()
-				}
+				}*/
+				//openTarget.Rep = append(openTarget.Rep, []byte(util.Convert(string(rep))))
+				//s.lock.Lock()
+				newTarget.Rep = []byte(util.Convert(string(rep)))
+				s.repChan <- newTarget
+				//s.lock.Unlock()
+			}
+			wg.Done()
+		}()
+		go func() {
+			rep, err := mongoSend(openTarget.Target)
+			if err != nil {
 				wg.Done()
-			}()
-			go func() {
-				rep, err := mongoSend(service.Target)
-				if err != nil {
+				return
+			}
+			if rep != nil {
+				var newTarget = &ServiceRep{}
+				newTarget.Ip = openTarget.Ip
+				newTarget.Port = openTarget.Port
+				newTarget.Target = openTarget.Target
+				newTarget.Tag = "mongo"
+				/*s.lock.Lock()
+				if bytes.Equal(cache[:], []byte(util.Convert(string(rep)))[:]) {
+					s.lock.Unlock()
 					wg.Done()
 					return
-				}
-				if rep != nil {
+				} else {
 					s.lock.Lock()
-					service.Rep = append(service.Rep, []byte(util.Convert(string(rep))))
+					cache = []byte(util.Convert(string(rep)))
 					s.lock.Unlock()
-				}
+				}*/
+				//openTarget.Rep = append(openTarget.Rep, []byte(util.Convert(string(rep))))
+				//s.lock.Lock()
+				newTarget.Rep = []byte(util.Convert(string(rep)))
+				s.repChan <- newTarget
+				//s.lock.Unlock()
+			}
+			wg.Done()
+		}()
+		go func() {
+			rep, err := rdpSend(openTarget.Target)
+			if err != nil {
 				wg.Done()
-			}()
-			go func() {
-				rep, err := rdpSend(service.Target)
-				if err != nil {
+				return
+			}
+			if rep != nil {
+				var newTarget = &ServiceRep{}
+				newTarget.Ip = openTarget.Ip
+				newTarget.Port = openTarget.Port
+				newTarget.Target = openTarget.Target
+				newTarget.Tag = "rdp"
+				/*s.lock.Lock()
+				if bytes.Equal(cache[:], []byte(util.Convert(string(rep)))[:]) {
+					s.lock.Unlock()
 					wg.Done()
 					return
-				}
-				if rep != nil {
+				} else {
 					s.lock.Lock()
-					service.Rep = append(service.Rep, []byte(util.Convert(string(rep))))
+					cache = []byte(util.Convert(string(rep)))
 					s.lock.Unlock()
-				}
-				wg.Done()
-			}()
-			wg.Wait()
-			s.repChan <- service
-			wgs.Done()
+				}*/
+
+				//openTarget.Rep = append(openTarget.Rep, []byte(util.Convert(string(rep))))
+				//s.lock.Lock()
+				newTarget.Rep = []byte(util.Convert(string(rep)))
+				s.repChan <- newTarget
+				//s.lock.Unlock()
+			}
+			wg.Done()
 		}()
 	}
-	wgs.Wait()
+	wg.Wait()
 	close(s.repChan)
 }
