@@ -12,12 +12,12 @@ mscan -i 127.0.0.1 -p 22 -t 100
 ```
 弱口令爆破
 ```shell
-mscan -i 127.0.0.1 -p 22 -m ssh -b 50
+mscan -i 127.0.0.1 -p 22 -m ssh
 ```
 结果输出
 ```shell
 #本地生成result.json
-mscan -i 127.0.0.1 -p 22 -m ssh -o json
+mscan -i 127.0.0.1 -o json
 ```
 参数说明
 ```shell
@@ -33,7 +33,7 @@ mscan --help
 
 
 ## 运行截图
-![运行截图](https://github.com/mmM1ku/Mscan/blob/main/imgs/E3D2A0DF-9441-4099-9442-03374D62639E.png?raw=true "运行截图")
+![运行截图](https://raw.githubusercontent.com/mmM1ku/Mscan/main/imgs/WechatIMG22.png "运行截图")
 
 ## 参考链接
 
