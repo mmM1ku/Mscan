@@ -69,7 +69,7 @@ func redisSend(target string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	msg := "*1\n$4\ninfo\n"
+	msg := "*1\r\n$4\r\ninfo\r\n"
 	_, err = conn.Write([]byte(msg))
 	if err != nil {
 		return nil, err

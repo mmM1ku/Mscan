@@ -1,12 +1,14 @@
 package portscan
 
 import (
+	"Mscan/common/brute"
 	"Mscan/common/util"
 	"fmt"
 	"github.com/kpango/glg"
 	"github.com/malfunkt/iprange"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 //gen ip slice
@@ -81,5 +83,42 @@ func (s *Scan) getFinger() {
 		} else {
 			s.customFinger = append(s.customFinger, finger)
 		}
+	}
+}
+
+//init brute chan
+func (s *Scan) initBruteChan() sync.Map {
+	brt := brute.NewBrute(s.bruteModule, s.thread, s.bruteChan)
+	//glg.Info("[+]准备弱口令扫描")
+	brt.BrutePool()
+	glg.Success("[+]弱口令扫描已完成")
+	return brt.BruteResult
+}
+
+//send brute target
+func (s *Scan) sendBruteTarget(service, target string) {
+	//通用情况
+	if s.bruteModule == service {
+		s.bruteChan <- util.Target{Service: service, Target: target}
+	}
+	//mssql
+	if s.bruteModule == "mssql" && service == "ms-sql-s" {
+		s.bruteChan <- util.Target{Service: service, Target: target}
+	}
+	//smb
+	if s.bruteModule == "smb" && service == "microsoft-ds" {
+		s.bruteChan <- util.Target{Service: service, Target: target}
+	}
+	//mongo
+	if s.bruteModule == "mongo" && service == "mongodb" {
+		s.bruteChan <- util.Target{Service: service, Target: target}
+	}
+	//postgre
+	if s.bruteModule == "postgre" && service == "postgresql" {
+		s.bruteChan <- util.Target{Service: service, Target: target}
+	}
+	//all
+	if s.bruteModule == "all" && service != "rdp" {
+		s.bruteChan <- util.Target{Service: service, Target: target}
 	}
 }

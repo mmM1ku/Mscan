@@ -53,6 +53,9 @@ func (s *Scan) serviceWorker() {
 					} else {
 						cache.Store(repStruct.Target, service.Service)
 					}
+					if s.bruteModule != "nb" {
+						s.sendBruteTarget(service.Service, repStruct.Target)
+					}
 					glg.Infof("[+]发现%s服务: %s:%v", service.Service, repStruct.Ip, repStruct.Port)
 					s.lock.Lock()
 					s.Result[repStruct.Ip].Service = append(s.Result[repStruct.Ip].Service, strconv.Itoa(repStruct.Port)+":"+service.Service)
@@ -69,4 +72,7 @@ func (s *Scan) serviceWorker() {
 	glg.Success("[+]指纹匹配已完成")
 	wg.Wait()
 	close(s.targetChan)
+	if s.bruteModule != "nb" {
+		close(s.bruteChan)
+	}
 }

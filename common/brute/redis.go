@@ -1,35 +1,35 @@
 package brute
 
 import (
-	"Mscan/common/util"
 	"github.com/gomodule/redigo/redis"
 	"github.com/kpango/glg"
-	"sync"
-	"sync/atomic"
+	"net"
+	"strings"
 	"time"
 )
 
-type Redis struct {
-	addr        []string
-	thread      int
-	wg          *sync.WaitGroup
-	Result      util.Result
-	ResultSlice []util.Result
-	lock        *sync.Mutex
-	workerChan  chan struct{}
-	Finish      int64
-	total       int64
-}
-
-func NewRedis(addr []string, thread int, group *sync.WaitGroup, mutex *sync.Mutex) *Redis {
-	return &Redis{
-		addr:   addr,
-		thread: thread,
-		wg:     group,
-		lock:   mutex,
-		Finish: 0,
-		total:  int64(len(addr)),
+func redisUnauth(addr string) bool {
+	conn, err := tcpConn(addr)
+	if err != nil {
+		return false
 	}
+	msg := "*1\r\n$4\r\ninfo\r\n"
+	_, err = conn.Write([]byte(msg))
+	if err != nil {
+		return false
+	}
+	_ = conn.SetDeadline(time.Now().Add(time.Duration(3) * time.Second))
+	rep := make([]byte, 256)
+	_, _ = conn.Read(rep)
+	if conn != nil {
+		_ = conn.Close()
+	}
+	if rep != nil {
+		if strings.Contains(string(rep), "redis_version") {
+			return true
+		}
+	}
+	return false
 }
 
 func redisCon(addr string) error {
@@ -38,53 +38,31 @@ func redisCon(addr string) error {
 		return err
 	}
 	defer client.Close()
+	if client.Err() != nil {
+		return client.Err()
+	}
 	return nil
 }
 
-func (r *Redis) bruteRedisWorker() {
-	r.workerChan = make(chan struct{}, r.thread)
-	for _, addr := range r.addr {
-		r.wg.Add(1)
-		r.workerChan <- struct{}{}
-		addr := addr
-		go func() {
-			if err := redisCon(addr); err == nil {
-				r.lock.Lock()
-				r.Result.Addr = &addr
-				r.Result.User = "空"
-				r.Result.Pass = "空"
-				r.ResultSlice = append(r.ResultSlice, r.Result)
-				r.lock.Unlock()
-				glg.Warnf("[+]发现Redis未授权访问：%s", addr)
-
-			} else if err != nil {
-				//fmt.Println(err)
-			}
-			<-r.workerChan
-			atomic.AddInt64(&r.Finish, 1)
-			r.wg.Done()
-		}()
+func (b *Brute) redisBrute(target string) {
+	//test unauth
+	if redisUnauth(target) {
+		glg.Warnf("[!]%s 存在redis未授权漏洞", target)
+		b.BruteResult.Store(target, "redis未授权访问")
 	}
 }
 
-func (r *Redis) BruteRedisPool() []util.Result {
-	r.wg.Add(2)
-	go func() {
-		r.bruteRedisWorker()
-		r.wg.Done()
-	}()
-	go func() {
-		for {
-			if atomic.LoadInt64(&r.Finish) == r.total {
-				util.GetProgress(atomic.LoadInt64(&r.Finish), r.total)
-				break
-			} else {
-				util.GetProgress(atomic.LoadInt64(&r.Finish), r.total)
-				time.Sleep(1 * time.Second)
-			}
+func tcpConn(target string) (net.Conn, error) {
+	conn, err := net.DialTimeout("tcp", target, time.Duration(2)*time.Second)
+	if err != nil {
+		return nil, err
+	}
+	err = conn.SetDeadline(time.Now().Add(time.Duration(2) * time.Second))
+	if err != nil {
+		if conn != nil {
+			_ = conn.Close()
 		}
-		r.wg.Done()
-	}()
-	r.wg.Wait()
-	return r.ResultSlice
+		return nil, err
+	}
+	return conn, nil
 }

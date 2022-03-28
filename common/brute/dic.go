@@ -1,34 +1,22 @@
 package brute
 
-import "Mscan/common/util"
+import (
+	"Mscan/common/util"
+)
 
-func GetDic(userpath, passpath string) ([]string, []string) {
-	var userDicList, passDicList []string
-	if userpath == "" && passpath == "" {
-		userDicList = util.UserList
-		passDicList = util.PassList
-		return userDicList, passDicList
-	} else if userpath == "" {
-		userDicList = util.UserList
-		passDicList = util.ReadDicFile(passpath)
-		return userDicList, passDicList
-	} else if passpath == "" {
-		userDicList = util.ReadDicFile(userpath)
-		passDicList = util.PassList
-		return userDicList, passDicList
-	}
-	userDicList = util.ReadDicFile(userpath)
-	passDicList = util.ReadDicFile(passpath)
-	return userDicList, passDicList
+type Dic struct {
+	User string
+	Pwd  string
 }
 
-func MakeDic(userdic *[]string, passdic *[]string, dicchan *chan string) {
-	var dic string
-	for _, user := range *userdic {
-		for _, pass := range *passdic {
-			dic = user + "???" + pass
-			*dicchan <- dic
+func genDic() []Dic {
+	var dics []Dic
+	for _, username := range util.UserList {
+		for _, pwd := range util.PassList {
+			dics = append(dics, Dic{username, pwd})
 		}
 	}
-	close(*dicchan)
+	return dics
 }
+
+/* todo 字典文件读取 */

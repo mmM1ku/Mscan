@@ -36,12 +36,9 @@ func (s *Scan) hostScan() {
 		wg.Add(1)
 		workChan <- struct{}{}
 		go func() {
-			//glg.Logf("[+]对主机%s进行存活探测", ip)
 			if ping(ip) {
 				glg.Logf("[+]主机%s存活", ip)
 				s.hostChan <- ip
-			} else {
-				glg.Warnf("[-]主机%s不存活", ip)
 			}
 			<-workChan
 			wg.Done()

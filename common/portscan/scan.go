@@ -20,9 +20,6 @@ type Scan struct {
 	wg            *sync.WaitGroup
 	lock          *sync.Mutex
 	workerChan    chan struct{}
-	scanResult    []string
-	Finish        int64
-	total         int64
 	respData      chan *util.HttpRes
 	defaultFinger []util.WebFinger
 	customFinger  []util.WebFinger
@@ -31,16 +28,19 @@ type Scan struct {
 	sendChan      chan *ServiceRep
 	openChan      chan *ServiceRep
 	repChan       chan *ServiceRep
+	bruteModule   string
+	bruteChan     chan util.Target
+	BruteResult   sync.Map
 }
 
-func NewScan(add, port string, threat int, group *sync.WaitGroup, mutex *sync.Mutex) *Scan {
+func NewScan(add, port string, threat int, group *sync.WaitGroup, mutex *sync.Mutex, brute string) *Scan {
 	return &Scan{
-		addrs:  add,
-		ports:  port,
-		thread: threat,
-		wg:     group,
-		lock:   mutex,
-		Finish: 0,
+		addrs:       add,
+		ports:       port,
+		thread:      threat,
+		wg:          group,
+		lock:        mutex,
+		bruteModule: brute,
 	}
 }
 
@@ -85,7 +85,19 @@ func (s *Scan) ScanPool() map[string]*util.DetailResult {
 	s.workerChan = make(chan struct{}, s.thread)
 	s.genScanTarget()
 	s.getFinger()
-	s.wg.Add(7)
+	//brute module
+	if s.bruteModule != "nb" {
+		s.bruteChan = make(chan util.Target, s.thread)
+	}
+	//start work
+	s.wg.Add(8)
+	go func() {
+		if s.bruteModule != "nb" {
+			//init brute channel
+			s.BruteResult = s.initBruteChan()
+		}
+		s.wg.Done()
+	}()
 	go func() {
 		s.hostScan()
 		s.wg.Done()

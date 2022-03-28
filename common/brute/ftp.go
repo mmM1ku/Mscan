@@ -4,9 +4,7 @@ import (
 	"Mscan/common/util"
 	"github.com/jlaffaye/ftp"
 	"github.com/kpango/glg"
-	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -25,20 +23,6 @@ type FTP struct {
 	passdic     *[]string
 }
 
-func NewFTP(addr []string, thread int, group *sync.WaitGroup, mutex *sync.Mutex, userdic, passdic *[]string, dicchan *chan string) *FTP {
-	return &FTP{
-		addr:    addr,
-		thread:  thread,
-		wg:      group,
-		lock:    mutex,
-		Finish:  0,
-		total:   int64(len(addr) * len(*userdic) * len(*passdic)),
-		userdic: userdic,
-		passdic: passdic,
-		dicchan: dicchan,
-	}
-}
-
 func ftpCon(addr, user, pass string) error {
 	c, err := ftp.Dial(addr, ftp.DialWithTimeout(3*time.Second))
 	if err != nil {
@@ -52,54 +36,23 @@ func ftpCon(addr, user, pass string) error {
 	return nil
 }
 
-func (f *FTP) bruteFtpWorker() {
-	for str := range *f.dicchan {
-		dic := strings.Split(str, "???")
-		for _, addr := range f.addr {
-			f.wg.Add(1)
-			f.workerChan <- struct{}{}
-			addr := addr
-			go func() {
-				if err := ftpCon(addr, dic[0], dic[1]); err == nil {
-					glg.Warnf("[+]发现弱口令：%v/%v, %s", dic[0], dic[1], addr)
-					f.lock.Lock()
-					f.Result.Addr = &addr
-					f.Result.User = dic[0]
-					f.Result.Pass = dic[1]
-					f.ResultSlice = append(f.ResultSlice, f.Result)
-					f.lock.Unlock()
-				}
-				atomic.AddInt64(&f.Finish, 1)
-				f.wg.Done()
-				<-f.workerChan
-			}()
-		}
-	}
-}
-
-func (f *FTP) BruteFtpPool() []util.Result {
-	f.workerChan = make(chan struct{}, f.thread)
-	f.wg.Add(3)
-	go func() {
-		MakeDic(f.userdic, f.passdic, f.dicchan)
-		f.wg.Done()
-	}()
-	go func() {
-		f.bruteFtpWorker()
-		f.wg.Done()
-	}()
-	go func() {
-		for {
-			if atomic.LoadInt64(&f.Finish) == f.total {
-				util.GetProgress(atomic.LoadInt64(&f.Finish), f.total)
-				break
-			} else {
-				util.GetProgress(atomic.LoadInt64(&f.Finish), f.total)
-				time.Sleep(1 * time.Second)
+func (b *Brute) ftpBrute(target string) {
+	var wg = &sync.WaitGroup{}
+	workChan := make(chan struct{}, 10)
+	for _, dic := range b.bruteDic {
+		wg.Add(1)
+		workChan <- struct{}{}
+		dic := dic
+		go func() {
+			if err := ftpCon(target, dic.User, dic.Pwd); err == nil {
+				glg.Warnf("[!]%s存在ftp弱口令%s/%s", target, dic.User, dic.Pwd)
+				b.BruteResult.Store(target, "ftp弱口令:"+dic.User+"/"+dic.Pwd)
 			}
-		}
-		f.wg.Done()
-	}()
-	f.wg.Wait()
-	return f.ResultSlice
+			wg.Done()
+			<-workChan
+		}()
+	}
+	wg.Wait()
+	glg.Infof("[+]%s的ftp爆破已完成", target)
+	close(workChan)
 }
