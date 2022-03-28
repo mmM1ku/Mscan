@@ -220,6 +220,7 @@ func (s *Scan) sendWorker() {
 			rep, err := commonSend(openTarget.Target)
 			if err != nil {
 				wg.Done()
+				<-workChan
 				return
 			}
 			if rep != nil {
@@ -239,6 +240,7 @@ func (s *Scan) sendWorker() {
 			rep, err := redisSend(openTarget.Target)
 			if err != nil {
 				wg.Done()
+				<-workChan
 				return
 			}
 			if rep != nil {
@@ -258,6 +260,7 @@ func (s *Scan) sendWorker() {
 			rep, err := mssqlSend(openTarget.Target)
 			if err != nil {
 				wg.Done()
+				<-workChan
 				return
 			}
 			if rep != nil {
@@ -277,6 +280,7 @@ func (s *Scan) sendWorker() {
 			rep, err := smbProgNegSend(openTarget.Target)
 			if err != nil {
 				wg.Done()
+				<-workChan
 				return
 			}
 			if rep != nil {
@@ -296,6 +300,7 @@ func (s *Scan) sendWorker() {
 			rep, err := mongoSend(openTarget.Target)
 			if err != nil {
 				wg.Done()
+				<-workChan
 				return
 			}
 			if rep != nil {
@@ -315,6 +320,7 @@ func (s *Scan) sendWorker() {
 			rep, err := rdpSend(openTarget.Target)
 			if err != nil {
 				wg.Done()
+				<-workChan
 				return
 			}
 			if rep != nil {
