@@ -12,7 +12,7 @@ import (
 func (b *Brute) mysqlBrute(target string) {
 	var wg = &sync.WaitGroup{}
 	workChan := make(chan struct{}, 10)
-	for _, dic := range b.bruteDic {
+	for _, dic := range b.mysqlDic {
 		wg.Add(1)
 		workChan <- struct{}{}
 		dic := dic

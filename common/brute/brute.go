@@ -9,6 +9,12 @@ type Brute struct {
 	bruteModule string
 	bruteThread int
 	bruteDic    []Dic
+	ftpDic      []Dic
+	mssqlDic    []Dic
+	mysqlDic    []Dic
+	postgresDic []Dic
+	smbDic      []Dic
+	sshDic      []Dic
 	targetChan  chan util.Target
 	BruteResult sync.Map
 }
@@ -23,7 +29,7 @@ func NewBrute(module string, thread int, target chan util.Target) *Brute {
 
 func (b *Brute) BrutePool() {
 	//init
-	b.bruteDic = genDic()
+	b.genDic()
 	var wg = &sync.WaitGroup{}
 	workChan := make(chan struct{}, 10)
 	for target := range b.targetChan {

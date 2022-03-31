@@ -37,7 +37,7 @@ func sshCon(addr, user, pass string) (bool, error) {
 func (b *Brute) sshBrute(target string) {
 	var wg = &sync.WaitGroup{}
 	workChan := make(chan struct{}, 10)
-	for _, dic := range b.bruteDic {
+	for _, dic := range b.sshDic {
 		wg.Add(1)
 		workChan <- struct{}{}
 		dic := dic

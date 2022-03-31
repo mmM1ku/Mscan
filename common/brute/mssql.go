@@ -34,7 +34,7 @@ func mssqlCon(addr, user, pass string) error {
 func (b *Brute) mssqlBrute(target string) {
 	var wg = &sync.WaitGroup{}
 	workChan := make(chan struct{}, 10)
-	for _, dic := range b.bruteDic {
+	for _, dic := range b.mssqlDic {
 		wg.Add(1)
 		workChan <- struct{}{}
 		dic := dic

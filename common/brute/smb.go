@@ -55,7 +55,7 @@ func (b *Brute) smbBrute(target string) {
 		glg.Warnf("[+]%s存在smb匿名用户guest登录", target)
 		b.BruteResult.Store(target, "smb匿名用户guest登录")
 	} else {
-		for _, dic := range b.bruteDic {
+		for _, dic := range b.smbDic {
 			wg.Add(1)
 			workChan <- struct{}{}
 			dic := dic

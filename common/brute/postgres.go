@@ -53,7 +53,7 @@ func (b *Brute) postgresqlBrute(target string) {
 		glg.Warnf("[+]%s存在默认用户postgres无密码登录!", target)
 		b.BruteResult.Store(target, "postgres用户无密码登录")
 	} else {
-		for _, dic := range b.bruteDic {
+		for _, dic := range b.postgresDic {
 			wg.Add(1)
 			workChan <- struct{}{}
 			dic := dic

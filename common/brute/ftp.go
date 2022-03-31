@@ -23,6 +23,19 @@ type FTP struct {
 	passdic     *[]string
 }
 
+func ftpUnauth(addr string) bool {
+	c, err := ftp.Dial(addr, ftp.DialWithTimeout(3*time.Second))
+	if err != nil {
+		return false
+	}
+	err = c.Login("anonymous", "anonymous")
+	if err != nil {
+		return false
+	}
+	defer c.Logout()
+	return true
+}
+
 func ftpCon(addr, user, pass string) error {
 	c, err := ftp.Dial(addr, ftp.DialWithTimeout(3*time.Second))
 	if err != nil {
@@ -39,18 +52,23 @@ func ftpCon(addr, user, pass string) error {
 func (b *Brute) ftpBrute(target string) {
 	var wg = &sync.WaitGroup{}
 	workChan := make(chan struct{}, 10)
-	for _, dic := range b.bruteDic {
-		wg.Add(1)
-		workChan <- struct{}{}
-		dic := dic
-		go func() {
-			if err := ftpCon(target, dic.User, dic.Pwd); err == nil {
-				glg.Warnf("[!]%s存在ftp弱口令%s/%s", target, dic.User, dic.Pwd)
-				b.BruteResult.Store(target, "ftp弱口令:"+dic.User+"/"+dic.Pwd)
-			}
-			wg.Done()
-			<-workChan
-		}()
+	if ftpUnauth(target) {
+		glg.Warnf("[+]%s存在ftp匿名登录", target)
+		b.BruteResult.Store(target, "ftp匿名登录")
+	} else {
+		for _, dic := range b.ftpDic {
+			wg.Add(1)
+			workChan <- struct{}{}
+			dic := dic
+			go func() {
+				if err := ftpCon(target, dic.User, dic.Pwd); err == nil {
+					glg.Warnf("[!]%s存在ftp弱口令%s/%s", target, dic.User, dic.Pwd)
+					b.BruteResult.Store(target, "ftp弱口令:"+dic.User+"/"+dic.Pwd)
+				}
+				wg.Done()
+				<-workChan
+			}()
+		}
 	}
 	wg.Wait()
 	glg.Infof("[+]%s的ftp爆破已完成", target)
