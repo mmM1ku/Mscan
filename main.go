@@ -1,8 +1,6 @@
 package main
 
 import (
-	"Mscan/common/ScanTask"
-	"Mscan/common/util"
 	"gopkg.in/alecthomas/kingpin.v2"
 	_ "net/http/pprof"
 )
@@ -19,13 +17,10 @@ var (
 )
 
 func main() {
-	defer util.TimeCost()()
-	/*go func() {
-		_ = http.ListenAndServe("0.0.0.0:8081", nil)
-	}()*/
+	/*defer util.TimeCost()()
 	util.InitLogo()
 	kingpin.Parse()
 	task := ScanTask.NewTask(*ips, *ports, *thread, *module, *brutethread, *userpath, *passpath, *output)
 	task.Run()
-	task.Wg.Wait()
+	task.Wg.Wait()*/
 }
